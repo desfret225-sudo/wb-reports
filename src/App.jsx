@@ -241,14 +241,30 @@ const App = () => {
 
   // --- Мемоизированные расчеты ---
 
+  // --- НОВОЕ: Фильтруем список самих ОТЧЕТОВ для панели переключения ---
+  const visibleFiles = useMemo(() => {
+    if (!startDate && !endDate) return files;
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    if (start) start.setHours(0, 0, 0, 0);
+    if (end) end.setHours(23, 59, 59, 999);
+
+    return files.filter(file =>
+      file.rows.some(row => isRowInRange(row, start, end))
+    );
+  }, [files, startDate, endDate]);
+
   const currentDataFiltered = useMemo(() => {
-    let baseData = (selectedFileId === 'total') ? files.flatMap(f => f.rows) : (files.find(f => f.id === selectedFileId)?.rows || []);
+    let baseData = (selectedFileId === 'total')
+      ? visibleFiles.flatMap(f => f.rows) // Берем только строки из видимых отчетов
+      : (files.find(f => f.id === selectedFileId)?.rows || []);
+
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
     if (start) start.setHours(0, 0, 0, 0);
     if (end) end.setHours(23, 59, 59, 999);
     return baseData.filter(row => isRowInRange(row, start, end));
-  }, [files, selectedFileId, startDate, endDate]);
+  }, [files, visibleFiles, selectedFileId, startDate, endDate]);
 
   const dashboardStats = useMemo(() => {
     let data = currentDataFiltered;
@@ -366,7 +382,17 @@ const App = () => {
         };
         reader.readAsBinaryString(file);
       });
-      if (data) newFiles.push({ id: Math.random().toString(36).substr(2, 9), name: file.name, reportNumber: data[0]?.['№'] || file.name.split('.')[0], rows: data });
+      if (data) {
+        // Улучшенное извлечение номера: цифры между № и _
+        let reportNum = "Отчет";
+        const match = file.name.match(/№(\d+)_/);
+        if (match) {
+          reportNum = match[1];
+        } else {
+          reportNum = data[0]?.['№'] || file.name.split('.')[0];
+        }
+        newFiles.push({ id: Math.random().toString(36).substr(2, 9), name: file.name, reportNumber: reportNum, rows: data });
+      }
     }
     setFiles(prev => [...prev, ...newFiles]);
     setIsLoading(false);
@@ -548,10 +574,10 @@ const App = () => {
                 onClick={() => { setSelectedFileId('total'); setActiveSku(null); }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${selectedFileId === 'total' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-white/50'}`}
               >
-                <Layers size={14} /> Все отчеты ({files.length})
+                <Layers size={14} /> Все отчеты ({visibleFiles.length})
               </button>
               <div className="w-[1px] h-4 bg-slate-300 mx-1" />
-              {files.map(file => (
+              {visibleFiles.map(file => (
                 <div key={file.id} className={`flex items-center gap-1 group rounded-xl pr-1 transition-all ${selectedFileId === file.id ? 'bg-white shadow-sm border border-slate-200' : ''}`}>
                   <button
                     onClick={() => { setSelectedFileId(file.id); setActiveSku(null); }}
