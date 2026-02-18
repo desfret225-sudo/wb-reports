@@ -183,7 +183,9 @@ const App = () => {
       setIsChecking(false);
       setIsAuthorized(true);
       localStorage.setItem('wb_tg_auth_v1', 'true');
-      setNotification({ type: 'success', text: 'Доступ разрешен! Приятной работы.' });
+      if (typeof setNotification === 'function') {
+        setNotification({ type: 'success', text: 'Доступ разрешен! Приятной работы.' });
+      }
     }, 2500);
   };
 
@@ -248,6 +250,11 @@ const App = () => {
   );
 
   if (!isAuthorized) return <TelegramAuth />;
+
+  const persistSavedPrices = (newPrices) => {
+    setSavedPrices(newPrices);
+    localStorage.setItem('wb_locked_prices_v1', JSON.stringify(newPrices));
+  };
 
   // --- Мемоизированные расчеты ---
 
