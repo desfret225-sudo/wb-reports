@@ -183,15 +183,51 @@ const App = () => {
     script.onload = () => setLibReady(true);
     document.head.appendChild(script);
 
+    // Загрузка себестоимости
     const savedCosts = localStorage.getItem('wb_cost_prices_v4');
     if (savedCosts) setCostPrices(JSON.parse(savedCosts));
 
+    // Загрузка сохраненных цен из калькулятора
     const savedLocked = localStorage.getItem('wb_locked_prices_v1');
     if (savedLocked) setSavedPrices(JSON.parse(savedLocked));
 
+    // Авторизация
     const auth = localStorage.getItem('wb_tg_auth_v1');
     if (auth === 'true') setIsAuthorized(true);
+
+    // --- НОВОЕ: Загрузка отчетов и фильтров ---
+    const savedFiles = localStorage.getItem('wb_reports_data_v1');
+    if (savedFiles) setFiles(JSON.parse(savedFiles));
+
+    const savedStart = localStorage.getItem('wb_filter_start_v1');
+    const savedEnd = localStorage.getItem('wb_filter_end_v1');
+    if (savedStart) setStartDate(savedStart);
+    if (savedEnd) setEndDate(savedEnd);
   }, []);
+
+  // --- НОВОЕ: Автоматическое сохранение при изменениях ---
+  useEffect(() => {
+    if (files.length > 0) {
+      localStorage.setItem('wb_reports_data_v1', JSON.stringify(files));
+    }
+  }, [files]);
+
+  useEffect(() => {
+    localStorage.setItem('wb_filter_start_v1', startDate);
+    localStorage.setItem('wb_filter_end_v1', endDate);
+  }, [startDate, endDate]);
+
+  const handleClearAllData = () => {
+    if (window.confirm('Вы уверены, что хотите удалить все загруженные отчеты?')) {
+      setFiles([]);
+      setStartDate('');
+      setEndDate('');
+      localStorage.removeItem('wb_reports_data_v1');
+      localStorage.removeItem('wb_filter_start_v1');
+      localStorage.removeItem('wb_filter_end_v1');
+      setNotification({ type: 'success', text: 'Все данные очищены' });
+    }
+  };
 
   const handleCheckSub = () => {
     setIsChecking(true);
@@ -488,7 +524,7 @@ const App = () => {
           <div className="flex flex-wrap items-center gap-2">
             <label className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl cursor-pointer text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"><Upload size={14} /> Загрузить отчеты <input type="file" className="hidden" multiple accept=".xlsx" onChange={handleFileUpload} /></label>
             <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 rounded-xl cursor-pointer text-xs font-bold hover:bg-emerald-50 transition-all"><Coins size={14} /> Себестоимость <input type="file" className="hidden" accept=".xlsx" onChange={handleCostPriceUpload} /></label>
-            {files.length > 0 && <button onClick={() => setFiles([])} className="px-3 text-rose-500 font-bold text-xs">CБРОСИТЬ ВСЁ</button>}
+            {files.length > 0 && <button onClick={handleClearAllData} className="px-3 text-rose-500 font-bold text-xs">CБРОСИТЬ ВСЁ</button>}
           </div>
         </header>
 
@@ -505,6 +541,57 @@ const App = () => {
                 <button onClick={resetPeriod} className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"><RefreshCcw size={16} /></button>
               </div>
             </div>
+
+            {/* Переключатель отчетов */}
+            <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit shadow-inner">
+              <button
+                onClick={() => { setSelectedFileId('total'); setActiveSku(null); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${selectedFileId === 'total' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-white/50'}`}
+              >
+                <Layers size={14} /> Все отчеты ({files.length})
+              </button>
+              <div className="w-[1px] h-4 bg-slate-300 mx-1" />
+              {files.map(file => (
+                <div key={file.id} className={`flex items-center gap-1 group rounded-xl pr-1 transition-all ${selectedFileId === file.id ? 'bg-white shadow-sm border border-slate-200' : ''}`}>
+                  <button
+                    onClick={() => { setSelectedFileId(file.id); setActiveSku(null); }}
+                    className={`px-4 py-2 text-xs font-bold transition-all ${selectedFileId === file.id ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <Hash size={12} className="inline opacity-50 mr-1" /> {file.reportNumber}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const nFiles = files.filter(f => f.id !== file.id);
+                      setFiles(nFiles);
+                      if (selectedFileId === file.id) setSelectedFileId('total');
+                      localStorage.setItem('wb_reports_data_v1', JSON.stringify(nFiles));
+                    }}
+                    className="p-1 text-slate-300 hover:text-rose-500 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Индикатор выбранного артикула */}
+            {activeSku && (
+              <div className="bg-indigo-600 text-white px-5 py-3 rounded-2xl flex items-center justify-between shadow-lg animate-bounce-in">
+                <div className="flex items-center gap-3">
+                  <Package size={20} />
+                  <div>
+                    <span className="text-[10px] uppercase font-black opacity-70">Аналитика по артикулу:</span>
+                    <h4 className="text-sm font-black mt-0.5">{activeSku}</h4>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveSku(null)}
+                  className="bg-white/20 hover:bg-white/30 p-1.5 rounded-lg flex items-center gap-1 text-xs font-bold transition-all"
+                >
+                  <X size={14} /> Сбросить фильтр
+                </button>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
               <MiniStat title="К перечислению" value={dashboardStats.toTransfer} color="emerald" icon={<TrendingUp size={14} />} />
@@ -547,6 +634,7 @@ const App = () => {
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest">Артикул</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-center">Шт</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right">Ср. цена Пр.</th>
+                        <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right text-blue-600">Логистика</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right text-rose-500">Прибыль (факт)</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right text-emerald-600">Прибыль (товар)</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right">Кальк.</th>
@@ -560,10 +648,16 @@ const App = () => {
                         const pItem = vals.toSeller - (avgL * vals.count) - (vals.fines + vals.storage + vals.withholdings + vals.acceptance) - (costPrices[art] || 0) * vals.count;
                         const isLocked = savedPrices.hasOwnProperty(art);
                         return (
-                          <tr key={art} className="border-b hover:bg-indigo-50/50 transition-colors">
-                            <td className="p-5 font-black text-slate-800"><div className="flex items-center gap-2">{art} {isLocked && <CheckCircle2 size={12} className="text-emerald-500" />}</div></td>
+                          <tr key={art} className={`border-b hover:bg-indigo-50/50 transition-colors cursor-pointer ${activeSku === art ? 'bg-indigo-50/80' : ''}`} onClick={() => setActiveSku(art === activeSku ? null : art)}>
+                            <td className="p-5 font-black text-slate-800">
+                              <div className="flex items-center gap-2">
+                                <span className={activeSku === art ? 'text-indigo-600' : ''}>{art}</span>
+                                {isLocked && <CheckCircle2 size={12} className="text-emerald-500" />}
+                              </div>
+                            </td>
                             <td className="p-5 text-center font-black text-indigo-600 text-sm leading-none">{vals.count}</td>
                             <td className="p-5 text-right font-bold text-slate-500">{formatMoney(vals.grossSalesCount > 0 ? vals.grossSalesSum / vals.grossSalesCount : 0)}</td>
+                            <td className="p-5 text-right text-blue-600 font-bold">{formatMoney(vals.delivery)}</td>
                             <td className={`p-5 text-right font-black ${pFact < 0 ? 'text-rose-500' : 'text-slate-700'}`}>{formatMoney(pFact)}</td>
                             <td className={`p-5 text-right font-black ${pItem < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>{formatMoney(pItem)}</td>
                             <td className="p-5 text-right"><div className="flex gap-2 justify-end"><FileText size={16} className="text-slate-300 cursor-pointer hover:text-slate-500" onClick={() => setHistorySku(art)} /><Calculator size={16} className="text-indigo-400 cursor-pointer hover:text-indigo-600" onClick={() => openCalculatorModal(art, vals)} /></div></td>
