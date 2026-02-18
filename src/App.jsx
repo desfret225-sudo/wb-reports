@@ -550,6 +550,21 @@ const App = () => {
               <Coins size={18} /><span>Себестоимость</span>
               <input type="file" className="hidden" accept=".xlsx,.xls" onChange={handleCostPriceUpload} disabled={!libReady || isLoading} />
             </label>
+            <button
+              onClick={() => {
+                if (!libReady) return;
+                const wsData = [['Артикул', 'Себестоимость'], ['Пример_1', 100], ['Пример_2', 250]];
+                const wb = window.XLSX.utils.book_new();
+                const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+                window.XLSX.utils.book_append_sheet(wb, ws, "Шаблон");
+                window.XLSX.writeFile(wb, "Шаблон_себестоимости.xlsx");
+              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all shadow-sm font-bold text-sm border-2 ${!libReady || isLoading ? 'border-slate-100 text-slate-200' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+              title="Скачать шаблон Excel"
+            >
+              <FileText size={18} />
+              <span>Шаблон</span>
+            </button>
             {files.length > 0 && (<button onClick={handleClearAll} className="px-3 py-2.5 text-rose-500 hover:bg-rose-50 rounded-xl font-bold text-sm border border-transparent hover:border-rose-100 transition-all">Очистить</button>)}
           </div>
         </header>
