@@ -35,7 +35,8 @@ import {
   PieChart,
   List,
   Play,
-  Search
+  Search,
+  RotateCcw
 } from 'lucide-react';
 
 // --- Глобальные вспомогательные функции ---
@@ -169,6 +170,7 @@ const App = () => {
   const [endDate, setEndDate] = useState('');
   const [costPrices, setCostPrices] = useState({});
   const [savedPrices, setSavedPrices] = useState({});
+  const [returnsToSupplier, setReturnsToSupplier] = useState([]); // НОВОЕ: Данные о возвратах к поставщику
   const [isLoading, setIsLoading] = useState(false);
   const [libReady, setLibReady] = useState(false);
   const [activeTab, setActiveTab] = useState('summary');
@@ -197,12 +199,14 @@ const App = () => {
     const auth = localStorage.getItem('wb_tg_auth_v1');
     if (auth === 'true') setIsAuthorized(true);
 
-    // --- НОВОЕ: Загрузка отчетов и фильтров с защитой от ошибок ---
     try {
       const savedFiles = localStorage.getItem('wb_reports_data_v1');
       if (savedFiles) setFiles(JSON.parse(savedFiles));
+
+      const savedReturns = localStorage.getItem('wb_returns_data_v1');
+      if (savedReturns) setReturnsToSupplier(JSON.parse(savedReturns));
     } catch (e) {
-      console.error("Ошибка загрузки отчетов:", e);
+      console.error("Ошибка загрузки данных:", e);
       localStorage.removeItem('wb_reports_data_v1');
     }
 
@@ -230,11 +234,13 @@ const App = () => {
   }, [startDate, endDate]);
 
   const handleClearAllData = () => {
-    if (window.confirm('Вы уверены, что хотите удалить все загруженные отчеты?')) {
+    if (window.confirm('Вы уверены, что хотите удалить все данные?')) {
       setFiles([]);
+      setReturnsToSupplier([]);
       setStartDate('');
       setEndDate('');
       localStorage.removeItem('wb_reports_data_v1');
+      localStorage.removeItem('wb_returns_data_v1');
       localStorage.removeItem('wb_filter_start_v1');
       localStorage.removeItem('wb_filter_end_v1');
       setNotification({ type: 'success', text: 'Все данные очищены' });
@@ -451,6 +457,32 @@ const App = () => {
     event.target.value = null; // Позволяет загружать те же файлы повторно
   };
 
+  const handleReturnsUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !libReady) return;
+    setIsLoading(true);
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = window.XLSX.read(e.target.result, { type: 'binary' });
+        const raw = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+        // Пруним данные для возвратов
+        const pruned = raw.map(row => ({
+          srid: String(row['Srid'] || row['srid'] || '').toLowerCase(),
+          sticker: String(row['Стикер МП'] || row['Стикер'] || '').toLowerCase(),
+          date: row['Дата'] || row['Дата возврата'] || '---'
+        })).filter(r => r.srid || r.sticker);
+
+        setReturnsToSupplier(pruned);
+        localStorage.setItem('wb_returns_data_v1', JSON.stringify(pruned));
+        setNotification({ type: 'success', text: `Загружено ${pruned.length} возвратов` });
+      } catch { setNotification({ type: 'error', text: 'Ошибка загрузки возвратов' }); }
+      finally { setIsLoading(false); event.target.value = null; }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const handleCostPriceUpload = async (event) => {
     const file = event.target.files[0];
     if (!file || !libReady) return;
@@ -579,10 +611,27 @@ const App = () => {
                   {historyData?.map((r, i) => {
                     const toS = parseWBNum(r['К перечислению Продавцу за реализованный Товар']);
                     const type = r['Обоснование для оплаты'] || r['Тип документа'];
+                    const rowSrid = String(r['Srid'] || r['srid'] || '').toLowerCase();
+                    const rowSticker = String(r['Стикер МП'] || r['Стикер'] || '').toLowerCase();
+
+                    // Поиск матча в возвратах поставщику
+                    const isReturnedToSupplier = returnsToSupplier.some(ret =>
+                      (rowSrid && ret.srid === rowSrid) || (rowSticker && ret.sticker === rowSticker)
+                    );
+
                     return (
-                      <tr key={i} className="hover:bg-slate-50">
+                      <tr key={i} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3 text-slate-500">{r['Дата продажи'] || '---'}</td>
-                        <td className="p-3"><span className={`px-2 py-0.5 rounded-lg font-bold ${type === 'Возврат' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100'}`}>{type}</span></td>
+                        <td className="p-3">
+                          <div className="flex flex-col gap-1">
+                            <span className={`px-2 py-0.5 rounded-lg font-bold w-fit ${type === 'Возврат' ? 'bg-rose-50 text-rose-600' : 'bg-slate-100'}`}>{type}</span>
+                            {type === 'Возврат' && (
+                              isReturnedToSupplier ?
+                                <span className="text-[9px] text-emerald-600 font-black uppercase flex items-center gap-1"><CheckCircle2 size={10} /> Вернулся к поставщику</span> :
+                                <span className="text-[9px] text-rose-500 font-black uppercase flex items-center gap-1 animate-pulse"><ShieldAlert size={10} /> Потерян (нет ПВО)</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-3 text-center">{r['Кол-во']}</td>
                         <td className={`p-3 text-right font-black ${toS < 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{formatMoney(toS)}</td>
                         <td className="p-3 text-right text-blue-500 font-bold">{formatMoney(parseWBNum(r['Услуги по доставке товара покупателю']))}</td>
@@ -601,7 +650,8 @@ const App = () => {
         <header className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-4"><div className="bg-indigo-600 p-3 rounded-2xl shadow-lg"><BarChart3 className="text-white" size={28} /></div><div><h1 className="text-xl font-black text-slate-900">WB Analyst <span className="text-indigo-600">PREM</span></h1><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Управление прибылью</p></div></div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl cursor-pointer text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"><Upload size={14} /> Загрузить отчеты <input type="file" className="hidden" multiple accept=".xlsx" onChange={handleFileUpload} /></label>
+            <label className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl cursor-pointer text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"><Upload size={14} /> Отчеты <input type="file" className="hidden" multiple accept=".xlsx" onChange={handleFileUpload} /></label>
+            <label className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 text-white rounded-xl cursor-pointer text-xs font-bold shadow-md hover:bg-rose-700 transition-all"><RotateCcw size={14} /> Возвраты <input type="file" className="hidden" accept=".xlsx" onChange={handleReturnsUpload} /></label>
             <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 rounded-xl cursor-pointer text-xs font-bold hover:bg-emerald-50 transition-all"><Coins size={14} /> Себестоимость <input type="file" className="hidden" accept=".xlsx" onChange={handleCostPriceUpload} /></label>
             {files.length > 0 && <button onClick={handleClearAllData} className="px-3 text-rose-500 font-bold text-xs">CБРОСИТЬ ВСЁ</button>}
           </div>
