@@ -197,9 +197,14 @@ const App = () => {
     const auth = localStorage.getItem('wb_tg_auth_v1');
     if (auth === 'true') setIsAuthorized(true);
 
-    // --- НОВОЕ: Загрузка отчетов и фильтров ---
-    const savedFiles = localStorage.getItem('wb_reports_data_v1');
-    if (savedFiles) setFiles(JSON.parse(savedFiles));
+    // --- НОВОЕ: Загрузка отчетов и фильтров с защитой от ошибок ---
+    try {
+      const savedFiles = localStorage.getItem('wb_reports_data_v1');
+      if (savedFiles) setFiles(JSON.parse(savedFiles));
+    } catch (e) {
+      console.error("Ошибка загрузки отчетов:", e);
+      localStorage.removeItem('wb_reports_data_v1');
+    }
 
     const savedStart = localStorage.getItem('wb_filter_start_v1');
     const savedEnd = localStorage.getItem('wb_filter_end_v1');
@@ -207,10 +212,15 @@ const App = () => {
     if (savedEnd) setEndDate(savedEnd);
   }, []);
 
-  // --- НОВОЕ: Автоматическое сохранение при изменениях ---
+  // --- НОВОЕ: Автоматическое сохранение при изменениях с защитой от переполнения ---
   useEffect(() => {
     if (files.length > 0) {
-      localStorage.setItem('wb_reports_data_v1', JSON.stringify(files));
+      try {
+        localStorage.setItem('wb_reports_data_v1', JSON.stringify(files));
+      } catch (e) {
+        console.warn("Память браузера переполнена. Отчеты будут доступны только в этой сессии.");
+        // Не очищаем, чтобы не удалять то, что влезло, но и не крашим приложение
+      }
     }
   }, [files]);
 
@@ -388,19 +398,43 @@ const App = () => {
     if (uploaded.length === 0 || !libReady) return;
     setIsLoading(true);
     const newFiles = [];
+
+    // Список необходимых колонок для аналитики и поиска (чтобы не забивать память)
+    const essentialKeys = [
+      'Обоснование для оплаты', 'Тип документа', 'Вайлдберриз реализовал Товар (Пр)',
+      'К перечислению Продавцу за реализованный Товар', 'Услуги по доставке товара покупателю',
+      'Кол-во', 'Общая сумма штрафов', 'Хранение', 'Сумма по полю Хранение',
+      'Удержания', 'Сумма по полю Удержания', 'Операции на приемке', 'Сумма по полю Операции на приемке',
+      'Артикул поставщика', 'Артикул', 'vendor_code', 'SaName',
+      'Дата продажи', 'Дата', 'Цена розничная с учетом согласованной скидки',
+      'Размер кВВ, %', 'Размер комиссии за эквайринг/Комиссии за организацию платежей, %',
+      'Код номенклатуры', 'Бренд', 'Предмет', 'Srid', 'srid',
+      'Номер сборочного задания', 'Сборочное задание', 'ШК', 'Стикер МП', 'Стикер', '№'
+    ];
+
     for (const file of uploaded) {
       const data = await new Promise(resolve => {
         const reader = new FileReader();
         reader.onload = e => {
           try {
             const wb = window.XLSX.read(e.target.result, { type: 'binary' });
-            resolve(window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]));
+            const raw = window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+            // Прунинг данных: оставляем только нужные колонки
+            const pruned = raw.map(row => {
+              const cleaned = {};
+              essentialKeys.forEach(key => {
+                if (row.hasOwnProperty(key)) cleaned[key] = row[key];
+              });
+              return cleaned;
+            });
+            resolve(pruned);
           } catch { resolve(null); }
         };
         reader.readAsBinaryString(file);
       });
-      if (data) {
-        // Улучшенное извлечение номера: цифры между № и _
+
+      if (data && data.length > 0) {
         let reportNum = "Отчет";
         const match = file.name.match(/№(\d+)_/);
         if (match) {
@@ -411,8 +445,10 @@ const App = () => {
         newFiles.push({ id: Math.random().toString(36).substr(2, 9), name: file.name, reportNumber: reportNum, rows: data });
       }
     }
+
     setFiles(prev => [...prev, ...newFiles]);
     setIsLoading(false);
+    event.target.value = null; // Позволяет загружать те же файлы повторно
   };
 
   const handleCostPriceUpload = async (event) => {
