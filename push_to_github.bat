@@ -33,9 +33,9 @@ git commit -m "Initial commit from Antigravity"
 git branch -M main
 
 :: Add/Update remote
-echo Setting remote origin...
+echo Setting remote origin to NEW REPOSITORY...
 git remote remove origin 2>nul
-git remote add origin https://github.com/dakhnevich005-cmd/wildberries-reports.git
+git remote add origin https://github.com/desfret225-sudo/wb-reports.git
 
 :: Push
 echo Pushing to GitHub...
@@ -47,7 +47,7 @@ git push -u origin main
 if %ERRORLEVEL% equ 0 (
     echo.
     echo [SUCCESS] Project successfully uploaded!
-    echo Check your repository: https://github.com/dakhnevich005-cmd/wildberries-reports
+    echo Check your repository: https://github.com/desfret225-sudo/wb-reports
 ) else (
     echo.
     echo [ERROR] Failed to upload. 
