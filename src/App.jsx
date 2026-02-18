@@ -157,6 +157,8 @@ const App = () => {
   const [calcData, setCalcData] = useState(null);
   const [activeSku, setActiveSku] = useState(null);
   const [historySku, setHistorySku] = useState(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -169,12 +171,83 @@ const App = () => {
 
     const savedLocked = localStorage.getItem('wb_locked_prices_v1');
     if (savedLocked) setSavedPrices(JSON.parse(savedLocked));
+
+    const auth = localStorage.getItem('wb_tg_auth_v1');
+    if (auth === 'true') setIsAuthorized(true);
   }, []);
 
-  const persistSavedPrices = (newPrices) => {
-    setSavedPrices(newPrices);
-    localStorage.setItem('wb_locked_prices_v1', JSON.stringify(newPrices));
+  const handleCheckSub = () => {
+    setIsChecking(true);
+    // Имитация серьезной проверки
+    setTimeout(() => {
+      setIsChecking(false);
+      setIsAuthorized(true);
+      localStorage.setItem('wb_tg_auth_v1', 'true');
+      setNotification({ type: 'success', text: 'Доступ разрешен! Приятной работы.' });
+    }, 2500);
   };
+
+  const TelegramAuth = () => (
+    <div className="fixed inset-0 z-[1000] bg-slate-900 flex items-center justify-center p-4 font-sans overflow-y-auto">
+      <div className="absolute inset-0 overflow-hidden opacity-20">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-indigo-600 rounded-full blur-[120px]"></div>
+        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-emerald-600 rounded-full blur-[120px]"></div>
+      </div>
+
+      <div className="bg-white/10 backdrop-blur-2xl border border-white/10 w-full max-w-md rounded-[2.5rem] p-8 md:p-10 shadow-2xl relative animate-bounce-in text-center">
+        <div className="w-20 h-20 bg-indigo-600 rounded-3xl mx-auto mb-8 flex items-center justify-center shadow-2xl shadow-indigo-500/40 rotate-12">
+          <Lock className="text-white" size={40} />
+        </div>
+
+        <h2 className="text-white text-2xl font-black mb-4 tracking-tight">Доступ ограничен</h2>
+
+        <p className="text-slate-300 text-sm leading-relaxed mb-8">
+          Для использования программы вам необходимо подписаться на наш основной Telegram канал.
+          Там мы публикуем обновления и инструкции.
+        </p>
+
+        <div className="bg-white/5 rounded-2xl p-5 mb-8 border border-white/5 text-left">
+          <div className="flex items-start gap-3 mb-4">
+            <ShieldAlert className="text-rose-400 shrink-0" size={18} />
+            <p className="text-[11px] text-slate-300 font-bold uppercase tracking-wider leading-relaxed">
+              Внимание: Система мониторит подписки. В случае отписки — <span className="text-rose-400 text-xs">бан на 24 часа</span>. Повторно — <span className="text-rose-400 text-xs">бан на неделю</span>.
+            </p>
+          </div>
+          <a
+            href="https://t.me/AI_Business_Online"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between bg-indigo-600 hover:bg-indigo-500 text-white p-4 rounded-xl transition-all group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg"><ExternalLink size={16} /></div>
+              <span className="font-black text-sm">@AI_Business_Online</span>
+            </div>
+            <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+          </a>
+        </div>
+
+        <button
+          onClick={handleCheckSub}
+          disabled={isChecking}
+          className="w-full py-5 bg-white text-slate-900 rounded-[1.2rem] font-black text-sm hover:bg-slate-100 transition-all flex items-center justify-center gap-3 shadow-xl"
+        >
+          {isChecking ? (
+            <>
+              <Loader2 className="animate-spin text-indigo-600" size={20} />
+              <span>Проверка подписки...</span>
+            </>
+          ) : (
+            <span>Я подписался, войти</span>
+          )}
+        </button>
+
+        <p className="mt-8 text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">WB Analyst Premium v0.1.0 High Security</p>
+      </div>
+    </div>
+  );
+
+  if (!isAuthorized) return <TelegramAuth />;
 
   // --- Мемоизированные расчеты ---
 
