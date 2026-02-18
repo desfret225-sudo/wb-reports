@@ -701,12 +701,27 @@ const App = () => {
                 <div className="overflow-x-auto text-sm font-sans">
                   <table className="w-full text-left border-collapse font-sans">
                     <thead className="bg-slate-50/50 border-b border-slate-100 font-sans">
-                      <tr><th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Артикул</th><th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center font-sans">Шт.</th><th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right font-sans">На счет</th><th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right text-rose-400 font-sans">Расходы</th><th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right text-indigo-500 font-black font-sans">Цена сайта</th><th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right font-sans">Прибыль</th></tr>
+                      <tr>
+                        <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Артикул</th>
+                        <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Шт.</th>
+                        <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">На счет</th>
+                        <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right text-rose-400">Расходы</th>
+                        <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right text-indigo-500 font-black">Цена сайта</th>
+                        <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Прибыль (факт)</th>
+                        <th className="p-5 text-[10px] font-bold text-indigo-600 uppercase tracking-widest text-right">Прибыль (по товару)</th>
+                      </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 text-left font-sans">
                       {Object.entries(allArticleStats).sort((a, b) => b[1].toSeller - a[1].toSeller).map(([art, vals]) => {
                         const wbCosts = vals.delivery + vals.fines + vals.storage + vals.withholdings + vals.acceptance;
-                        const profit = vals.toSeller - wbCosts - ((costPrices[art] || 0) * vals.count);
+                        const profitReport = vals.toSeller - wbCosts - ((costPrices[art] || 0) * vals.count);
+
+                        // Логика "Прибыль по товару"
+                        const avgDelivery = vals.deliveryCount > 0 ? (vals.delivery / vals.deliveryCount) : 0;
+                        const otherExpenses = vals.fines + vals.storage + vals.withholdings + vals.acceptance;
+                        // Считаем логистику только на выкупленный товар (vals.count)
+                        const profitItem = vals.toSeller - (avgDelivery * vals.count) - otherExpenses - ((costPrices[art] || 0) * vals.count);
+
                         const isLocked = savedPrices.hasOwnProperty(art);
                         const isCurrentActive = activeSku === art;
                         return (
@@ -724,7 +739,8 @@ const App = () => {
                                 <button onClick={() => openCalculatorModal(art, vals)} className={`p-1.5 rounded-lg transition-all ${isLocked ? 'bg-emerald-500 text-white shadow-md' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white'}`}><Calculator size={14} /></button>
                               </div>
                             </td>
-                            <td className={`p-5 text-right font-black text-base leading-none font-sans ${profit < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{formatMoney(profit)}</td>
+                            <td className={`p-5 text-right font-bold text-sm leading-none font-sans ${profitReport < 0 ? 'text-rose-600' : 'text-slate-600'}`}>{formatMoney(profitReport)}</td>
+                            <td className={`p-5 text-right font-black text-base leading-none font-sans ${profitItem < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>{formatMoney(profitItem)}</td>
                           </tr>
                         );
                       })}
