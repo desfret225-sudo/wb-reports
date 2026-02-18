@@ -253,8 +253,14 @@ const App = () => {
       articles[art].acceptance += parseWBNum(row['Операции на приемке'] || row['Сумма по полю Операции на приемке']);
       const kvv = parseWBNum(row['Размер кВВ, %']);
       const acq = parseWBNum(row['Размер комиссии за эквайринг/Комиссии за организацию платежей, %']);
-      if (kvv !== 0) { articles[art].kvvSum += kvv; articles[art].kvvCount++; }
-      if (acq !== 0) { articles[art].acqSum += acq; articles[art].acqCount++; }
+      if (kvv !== 0) {
+        articles[art].kvvSum += Math.abs(kvv) * Math.abs(count || 1);
+        articles[art].kvvCount += Math.abs(count || 1);
+      }
+      if (acq !== 0) {
+        articles[art].acqSum += Math.abs(acq) * Math.abs(count || 1);
+        articles[art].acqCount += Math.abs(count || 1);
+      }
     });
     return articles;
   }, [currentDataFiltered]);
