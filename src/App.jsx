@@ -484,10 +484,10 @@ const App = () => {
 
       <div className="max-w-[1500px] mx-auto p-4 md:p-8">
         <header className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-          <div className="flex items-center gap-4"><div className="bg-indigo-600 p-3 rounded-2xl shadow-lg"><BarChart3 className="text-white" size={28} /></div><div><h1 className="text-xl font-black text-slate-900">WB Analyst <span className="text-indigo-600">Multi</span></h1><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Professional Analytical System</p></div></div>
+          <div className="flex items-center gap-4"><div className="bg-indigo-600 p-3 rounded-2xl shadow-lg"><BarChart3 className="text-white" size={28} /></div><div><h1 className="text-xl font-black text-slate-900">WB Analyst <span className="text-indigo-600">PREM</span></h1><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-1">Управление прибылью</p></div></div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl cursor-pointer text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"><Upload size={14} /> ДОБАВИТЬ ОТЧЕТЫ <input type="file" className="hidden" multiple accept=".xlsx" onChange={handleFileUpload} /></label>
-            <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 rounded-xl cursor-pointer text-xs font-bold hover:bg-emerald-50 transition-all"><Coins size={14} /> СЕБЕСТОИМОСТЬ <input type="file" className="hidden" accept=".xlsx" onChange={handleCostPriceUpload} /></label>
+            <label className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl cursor-pointer text-xs font-bold shadow-md hover:bg-indigo-700 transition-all"><Upload size={14} /> Загрузить отчеты <input type="file" className="hidden" multiple accept=".xlsx" onChange={handleFileUpload} /></label>
+            <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-emerald-500 text-emerald-600 rounded-xl cursor-pointer text-xs font-bold hover:bg-emerald-50 transition-all"><Coins size={14} /> Себестоимость <input type="file" className="hidden" accept=".xlsx" onChange={handleCostPriceUpload} /></label>
             {files.length > 0 && <button onClick={() => setFiles([])} className="px-3 text-rose-500 font-bold text-xs">CБРОСИТЬ ВСЁ</button>}
           </div>
         </header>
@@ -506,7 +506,7 @@ const App = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3">
               <MiniStat title="К перечислению" value={dashboardStats.toTransfer} color="emerald" icon={<TrendingUp size={14} />} />
               <MiniStat title="Логистика" value={dashboardStats.delivery} color="blue" icon={<Truck size={14} />} subValue={`${dashboardStats.deliveryCount} дост. | ср. ${Math.round(dashboardStats.delivery / Math.max(1, dashboardStats.deliveryCount))} ₽`} />
               <MiniStat title="Штрафы" value={dashboardStats.fines} color="rose" icon={<ShieldAlert size={14} />} />
@@ -514,7 +514,7 @@ const App = () => {
               <MiniStat title="Прочее" value={dashboardStats.withholdings + dashboardStats.acceptance} color="slate" icon={<ArrowDownCircle size={14} />} />
               <div className="bg-white p-4 rounded-2xl border-2 border-indigo-600 shadow-md flex flex-col justify-between min-h-[100px]"><span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">На счет</span><div className="text-lg font-black text-slate-800">{formatMoney(amountToBank)}</div></div>
               <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between min-h-[100px]"><span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Себест.</span><div className="text-lg font-black text-slate-700">{formatMoney(totalCostForView)}</div></div>
-              <div className="bg-indigo-600 p-4 rounded-2xl text-white shadow-xl flex flex-col justify-between min-h-[100px]"><span className="text-[10px] font-bold uppercase opacity-80 tracking-widest">Прибыль</span><div className="text-xl font-black">{formatMoney(finalNet)}</div></div>
+              <div className="bg-indigo-600 p-4 rounded-2xl text-white shadow-xl flex flex-col justify-between min-h-[100px]"><span className="text-[10px] font-bold uppercase opacity-80 tracking-widest leading-none">Прибыль чистая</span><div className="text-xl font-black">{formatMoney(finalNet)}</div></div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm transition-all text-left">
@@ -546,11 +546,10 @@ const App = () => {
                       <tr>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest">Артикул</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-center">Шт</th>
-                        <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right">Ср. цена</th>
-                        <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right text-blue-600">Логистика</th>
+                        <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right">Ср. цена Пр.</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right text-rose-500">Прибыль (факт)</th>
                         <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right text-emerald-600">Прибыль (товар)</th>
-                        <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right">Опции</th>
+                        <th className="p-5 font-black uppercase text-slate-400 tracking-widest text-right">Кальк.</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -565,7 +564,6 @@ const App = () => {
                             <td className="p-5 font-black text-slate-800"><div className="flex items-center gap-2">{art} {isLocked && <CheckCircle2 size={12} className="text-emerald-500" />}</div></td>
                             <td className="p-5 text-center font-black text-indigo-600 text-sm leading-none">{vals.count}</td>
                             <td className="p-5 text-right font-bold text-slate-500">{formatMoney(vals.grossSalesCount > 0 ? vals.grossSalesSum / vals.grossSalesCount : 0)}</td>
-                            <td className="p-5 text-right text-blue-500 font-bold">{formatMoney(vals.delivery)}</td>
                             <td className={`p-5 text-right font-black ${pFact < 0 ? 'text-rose-500' : 'text-slate-700'}`}>{formatMoney(pFact)}</td>
                             <td className={`p-5 text-right font-black ${pItem < 0 ? 'text-rose-600' : 'text-emerald-700'}`}>{formatMoney(pItem)}</td>
                             <td className="p-5 text-right"><div className="flex gap-2 justify-end"><FileText size={16} className="text-slate-300 cursor-pointer hover:text-slate-500" onClick={() => setHistorySku(art)} /><Calculator size={16} className="text-indigo-400 cursor-pointer hover:text-indigo-600" onClick={() => openCalculatorModal(art, vals)} /></div></td>
