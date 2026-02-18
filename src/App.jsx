@@ -88,7 +88,7 @@ const formatMoney = (val) => {
 
 // --- Под-компоненты ---
 
-const MiniStat = ({ title, value, color, icon }) => {
+const MiniStat = ({ title, value, color, icon, subValue }) => {
   const colors = {
     emerald: 'bg-emerald-50 text-emerald-600',
     blue: 'bg-blue-50 text-blue-600',
@@ -103,7 +103,10 @@ const MiniStat = ({ title, value, color, icon }) => {
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider leading-none">{title}</span>
         <div className={`p-1.5 rounded-xl ${colors[color] || colors.slate}`}>{icon}</div>
       </div>
-      <div className="text-lg font-black text-slate-800 tracking-tight leading-none">{formatMoney(value)}</div>
+      <div>
+        <div className="text-lg font-black text-slate-800 tracking-tight leading-none">{formatMoney(value)}</div>
+        {subValue && <div className="text-[9px] font-bold text-slate-400 mt-1.5 leading-none bg-slate-50 p-1.5 rounded-lg border border-slate-100">{subValue}</div>}
+      </div>
     </div>
   );
 };
@@ -198,7 +201,7 @@ const App = () => {
     if (activeSku) {
       data = data.filter(r => getArt(r) === activeSku);
     }
-    const stats = { realized: 0, toTransfer: 0, delivery: 0, fines: 0, storage: 0, withholdings: 0, acceptance: 0, count: 0 };
+    const stats = { realized: 0, toTransfer: 0, delivery: 0, deliveryCount: 0, fines: 0, storage: 0, withholdings: 0, acceptance: 0, count: 0 };
     data.forEach(row => {
       const type = row['Обоснование для оплаты'] || row['Тип документа'] || 'Прочее';
       let realized = parseWBNum(row['Вайлдберриз реализовал Товар (Пр)']);
@@ -207,7 +210,11 @@ const App = () => {
 
       stats.realized += realized;
       stats.toTransfer += toTransfer;
-      stats.delivery += parseWBNum(row['Услуги по доставке товара покупателю']);
+      const delivery = parseWBNum(row['Услуги по доставке товара покупателю']);
+      stats.delivery += delivery;
+      if (delivery > 0) {
+        stats.deliveryCount += Math.abs(parseInt(row['Кол-во']) || 1);
+      }
       stats.fines += parseWBNum(row['Общая сумма штрафов']);
       stats.storage += parseWBNum(row['Хранение'] || row['Сумма по полю Хранение']);
       stats.withholdings += parseWBNum(row['Удержания'] || row['Сумма по полю Удержания']);
@@ -225,7 +232,7 @@ const App = () => {
     currentDataFiltered.forEach(row => {
       const art = getArt(row);
       if (!art) return;
-      if (!articles[art]) articles[art] = { count: 0, revenue: 0, toSeller: 0, delivery: 0, fines: 0, storage: 0, withholdings: 0, acceptance: 0, returnCount: 0, kvvSum: 0, kvvCount: 0, acqSum: 0, acqCount: 0 };
+      if (!articles[art]) articles[art] = { count: 0, revenue: 0, toSeller: 0, delivery: 0, deliveryCount: 0, fines: 0, storage: 0, withholdings: 0, acceptance: 0, returnCount: 0, kvvSum: 0, kvvCount: 0, acqSum: 0, acqCount: 0 };
       const type = row['Обоснование для оплаты'];
       const count = parseInt(row['Кол-во']) || 0;
       let realized = parseWBNum(row['Вайлдберриз реализовал Товар (Пр)']);
@@ -235,7 +242,11 @@ const App = () => {
       else if (type === 'Возврат') { articles[art].count -= count; }
       articles[art].revenue += realized;
       articles[art].toSeller += toTransfer;
-      articles[art].delivery += parseWBNum(row['Услуги по доставке товара покупателю']);
+      const delivery = parseWBNum(row['Услуги по доставке товара покупателю']);
+      articles[art].delivery += delivery;
+      if (delivery > 0) {
+        articles[art].deliveryCount += Math.abs(count || 1);
+      }
       articles[art].fines += parseWBNum(row['Общая сумма штрафов']);
       articles[art].storage += parseWBNum(row['Хранение'] || row['Сумма по полю Хранение']);
       articles[art].withholdings += parseWBNum(row['Удержания'] || row['Сумма по полю Удержания']);
@@ -617,7 +628,13 @@ const App = () => {
             {/* Dashboard Stats (8 КАРТОЧЕК) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3 transition-all duration-500">
               <MiniStat title="К перечислению" value={dashboardStats.toTransfer} color="emerald" icon={<TrendingUp size={14} />} />
-              <MiniStat title="Логистика" value={dashboardStats.delivery} color="blue" icon={<Truck size={14} />} />
+              <MiniStat
+                title="Логистика"
+                value={dashboardStats.delivery}
+                color="blue"
+                icon={<Truck size={14} />}
+                subValue={dashboardStats.deliveryCount > 0 ? `${dashboardStats.deliveryCount} дост. | ср. ${Math.round(dashboardStats.delivery / dashboardStats.deliveryCount)} ₽` : '0 доставок'}
+              />
               <MiniStat title="Штрафы" value={dashboardStats.fines} color="rose" icon={<ShieldAlert size={14} />} />
               <MiniStat title="Хранение" value={dashboardStats.storage} color="amber" icon={<Archive size={14} />} />
               <MiniStat title="Прочее" value={dashboardStats.withholdings + dashboardStats.acceptance} color="slate" icon={<ArrowDownCircle size={14} />} />
