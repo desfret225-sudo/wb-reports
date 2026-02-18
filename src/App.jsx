@@ -445,8 +445,7 @@ const App = () => {
   };
 
   const openCalculatorModal = (art, stats) => {
-    const totalUnits = Math.abs(stats.count) + Math.abs(stats.returnCount);
-    const avgLog = totalUnits > 0 ? (stats.delivery / totalUnits) : 0;
+    const avgLog = stats.deliveryCount > 0 ? (stats.delivery / stats.deliveryCount) : 0;
     const avgComm = stats.kvvCount > 0 ? (stats.kvvSum / stats.kvvCount) : 20;
     const avgAcq = stats.acqCount > 0 ? (stats.acqSum / stats.acqCount) : 2;
     setCalcData({ art, cost: costPrices[art] || 0, avgLogistics: Math.round(avgLog), commission: parseFloat(avgComm.toFixed(2)), acquiring: parseFloat(avgAcq.toFixed(2)), tax: 6, other: 50, desiredProfit: 300, spp: 15 });
