@@ -372,97 +372,229 @@ const App = () => {
 
       {calcData && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white w-full max-w-xl rounded-[2rem] shadow-2xl overflow-hidden animate-bounce-in my-8">
-            <div className="bg-indigo-600 p-4 text-white flex justify-between items-center"><h3 className="font-bold">Калькулятор: {calcData.art}</h3><X className="cursor-pointer" onClick={() => setCalcData(null)} /></div>
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden animate-bounce-in my-8">
+            <div className="bg-indigo-600 p-6 text-white flex justify-between items-center">
+              <div>
+                <h3 className="font-black text-xl">Калькулятор: {calcData.art}</h3>
+                <p className="text-[10px] opacity-70 font-bold uppercase">Расчет целевой цены для маркетплейса</p>
+              </div>
+              <X className="cursor-pointer hover:rotate-90 transition-all" onClick={() => setCalcData(null)} />
+            </div>
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <CalcInput label="Себест." value={calcData.cost} suffix="₽" onChange={v => setCalcData({ ...calcData, cost: v })} />
                 <CalcInput label="Логистика" value={calcData.avgLogistics} suffix="₽" onChange={v => setCalcData({ ...calcData, avgLogistics: v })} />
-                <CalcInput label="Прибыль" value={calcData.desiredProfit} suffix="₽" onChange={v => setCalcData({ ...calcData, desiredProfit: v })} />
-                <CalcInput label="Комиссия %" value={calcData.commission} suffix="%" onChange={v => setCalcData({ ...calcData, commission: v })} highlight />
+                <CalcInput label="Комиссия" value={calcData.commission} suffix="%" onChange={v => setCalcData({ ...calcData, commission: v })} />
+                <CalcInput label="Эквайринг" value={calcData.acquiring} suffix="%" onChange={v => setCalcData({ ...calcData, acquiring: v })} />
+                <CalcInput label="Налог" value={calcData.tax} suffix="%" onChange={v => setCalcData({ ...calcData, tax: v })} highlight />
+                <CalcInput label="Прочие" value={calcData.other} suffix="₽" onChange={v => setCalcData({ ...calcData, other: v })} />
+                <CalcInput label="Прибыль" value={calcData.desiredProfit} suffix="₽" onChange={v => setCalcData({ ...calcData, desiredProfit: v })} highlight />
+                <CalcInput label="СПП" value={calcData.spp} suffix="%" onChange={v => setCalcData({ ...calcData, spp: v })} />
               </div>
-              <div className="grid grid-cols-2 gap-4 bg-slate-900 p-4 rounded-2xl text-center">
-                <div><p className="text-[10px] text-slate-400 font-bold">ЦЕНА САЙТА</p><p className="text-2xl font-black text-white">{formatMoney(calculatedResult.sitePrice)}</p></div>
-                <div><p className="text-[10px] text-slate-400 font-bold">ЦЕНА СПП</p><p className="text-2xl font-black text-emerald-400">{formatMoney(calculatedResult.buyerPrice)}</p></div>
+
+              <div className="bg-slate-900 p-6 rounded-[2rem] grid grid-cols-2 gap-8 text-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp size={80} className="text-white" /></div>
+                <div className="relative z-10">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Рекоменд. цена (сайт)</p>
+                  <p className="text-3xl font-black text-white">{formatMoney(calculatedResult.sitePrice)}</p>
+                </div>
+                <div className="relative z-10 border-l border-white/10">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Ожид. цена (покупатель)</p>
+                  <p className="text-3xl font-black text-emerald-400">{formatMoney(calculatedResult.buyerPrice)}</p>
+                </div>
               </div>
-              <button onClick={() => { setSavedPrices({ ...savedPrices, [calcData.art]: calculatedResult.sitePrice }); setNotification({ type: 'success', text: 'Цена сохранена' }); setCalcData(null); }} className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold">Закрыть и сохранить</button>
+
+              <button
+                onClick={() => {
+                  persistSavedPrices({ ...savedPrices, [calcData.art]: calculatedResult.sitePrice });
+                  setNotification({ type: 'success', text: 'Цена сохранена в системе' });
+                  setCalcData(null);
+                }}
+                className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 shadow-lg shadow-indigo-200"
+              >
+                <Save size={18} /> Сохранить настройки цены
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="max-w-[1400px] mx-auto p-4 md:p-8">
-        <header className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm">
-          <div className="flex items-center gap-3"><BarChart3 className="text-indigo-600" size={32} /><div><h1 className="text-xl font-black">WB ANALYST PREM</h1><p className="text-[10px] text-slate-400 font-bold">УПРАВЛЕНИЕ ПРИБЫЛЬЮ</p></div></div>
-          <div className="flex gap-2">
-            <label className="bg-indigo-600 text-white px-4 py-2 rounded-lg cursor-pointer text-xs font-bold flex items-center gap-2">
-              <Upload size={14} /> Загрузить отчеты
+      <div className="max-w-[1440px] mx-auto p-4 md:p-8">
+        <header className="mb-8 flex flex-col lg:flex-row items-center justify-between gap-6 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100">
+              <BarChart3 className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tighter">WB ANALYST <span className="text-indigo-600">PREM</span></h1>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Система глубокой аналитики</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <label className="bg-indigo-600 text-white px-5 py-3 rounded-2xl cursor-pointer text-xs font-black flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-md active:scale-95">
+              <Upload size={16} /> Загрузить отчеты
               <input type="file" className="hidden" multiple accept=".xlsx" onChange={handleFileUpload} />
             </label>
-            <label className="border border-emerald-500 text-emerald-600 px-4 py-2 rounded-lg cursor-pointer text-xs font-bold">
-              Себестоимость <input type="file" className="hidden" accept=".xlsx" onChange={handleCostPriceUpload} />
+            <label className="bg-emerald-50 text-emerald-600 border-2 border-emerald-100 px-5 py-[10px] rounded-2xl cursor-pointer text-xs font-black flex items-center gap-2 hover:bg-emerald-100 transition-all">
+              <Package size={16} /> Себестоимость
+              <input type="file" className="hidden" accept=".xlsx" onChange={handleCostPriceUpload} />
             </label>
-            {files.length > 0 && <button onClick={() => setFiles([])} className="text-rose-500 text-xs font-bold px-3">Очистить</button>}
+            {files.length > 0 && (
+              <button onClick={() => { setFiles([]); setSelectedFileId('total'); }} className="p-3 text-rose-500 hover:bg-rose-50 rounded-2xl transition-all" title="Очистить всё">
+                <RefreshCcw size={18} />
+              </button>
+            )}
           </div>
         </header>
 
         {files.length === 0 ? (
-          <div className="bg-white rounded-2xl p-20 text-center border-2 border-dashed border-slate-100 text-slate-300 font-black uppercase tracking-widest text-sm">Нет данных</div>
+          <div className="bg-white rounded-[3rem] p-32 text-center border-4 border-dashed border-slate-50 flex flex-col items-center gap-6">
+            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200"><FileText size={40} /></div>
+            <div>
+              <p className="text-slate-400 font-black uppercase tracking-widest text-sm mb-2">Нет данных для анализа</p>
+              <p className="text-slate-300 text-xs">Загрузите еженедельные отчеты реализации WB для начала работы</p>
+            </div>
+          </div>
         ) : (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 text-left">
-              <MiniStat title="К выплате" value={dashboardStats.toTransfer} color="emerald" icon={<TrendingUp size={14} />} />
-              <MiniStat title="Логистика" value={dashboardStats.delivery} color="blue" icon={<Truck size={14} />} subValue={`${dashboardStats.deliveryCount} шт | ср. ${Math.round(dashboardStats.delivery / dashboardStats.deliveryCount || 0)} ₽`} />
-              <MiniStat title="Расходы WB" value={dashboardStats.fines + dashboardStats.storage + dashboardStats.withholdings + dashboardStats.acceptance} color="rose" icon={<ShieldAlert size={14} />} />
-              <div className="bg-indigo-600 p-4 rounded-xl text-white flex flex-col justify-between shadow-lg">
-                <span className="text-[10px] font-bold uppercase opacity-80">Прибыль чистая</span>
-                <span className="text-xl font-black">{formatMoney(finalNet)}</span>
+          <div className="space-y-6">
+            {/* Filters Bar */}
+            <div className="bg-white p-4 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
+              <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl flex-1 w-full overflow-hidden">
+                <Hash className="text-slate-400 ml-2" size={16} />
+                <select
+                  value={selectedFileId}
+                  onChange={(e) => setSelectedFileId(e.target.value)}
+                  className="bg-transparent border-none text-xs font-bold outline-none flex-1 truncate py-1 pr-8"
+                >
+                  <option value="total">Все отчеты консолидированно ({files.length} шт)</option>
+                  {files.map(f => (
+                    <option key={f.id} value={f.id}>Отчет №{f.reportNumber} ({f.name})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-xl w-full md:w-auto">
+                <Calendar className="text-slate-400 ml-2" size={16} />
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-transparent border-none text-[10px] font-bold outline-none uppercase" />
+                <span className="text-slate-300">—</span>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-transparent border-none text-[10px] font-bold outline-none uppercase" />
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden text-left">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs font-sans">
-                  <thead className="bg-slate-50 border-b border-slate-100 font-black text-slate-400 uppercase tracking-tighter">
-                    <tr>
-                      <th className="p-4 text-left">Артикул</th>
-                      <th className="p-4 text-center">Шт</th>
-                      <th className="p-4 text-right">Ср. цена Пр.</th>
-                      <th className="p-4 text-right">Прибыль (факт)</th>
-                      <th className="p-4 text-right text-indigo-600">Прибыль (товар)</th>
-                      <th className="p-4 text-right">Кальк.</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50 font-bold">
-                    {Object.entries(allArticleStats).map(([art, vals]) => {
-                      const wbCosts = vals.delivery + vals.fines + vals.storage + vals.withholdings + vals.acceptance;
-                      const profitFact = vals.toSeller - wbCosts - (costPrices[art] || 0) * vals.count;
-                      const avgLog = (vals.deliveryCount > 0 ? vals.delivery / vals.deliveryCount : 0);
-                      const profitItem = vals.toSeller - (avgLog * vals.count) - (vals.fines + vals.storage + vals.withholdings + vals.acceptance) - (costPrices[art] || 0) * vals.count;
-                      return (
-                        <tr key={art} className="hover:bg-indigo-50/30">
-                          <td className="p-4">{art}</td>
-                          <td className="p-4 text-center">{vals.count}</td>
-                          <td className="p-4 text-right">{formatMoney(vals.grossSalesCount > 0 ? vals.grossSalesSum / vals.grossSalesCount : 0)}</td>
-                          <td className={`p-4 text-right ${profitFact < 0 ? 'text-rose-500' : 'text-slate-600'}`}>{formatMoney(profitFact)}</td>
-                          <td className={`p-4 text-right font-black ${profitItem < 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{formatMoney(profitItem)}</td>
-                          <td className="p-4 text-right"><Calculator size={14} className="inline cursor-pointer text-indigo-400" onClick={() => openCalculatorModal(art, vals)} /></td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            {/* Dashboard Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <MiniStat title="К перечислению" value={dashboardStats.toTransfer} color="emerald" icon={<TrendingUp size={16} />} />
+              <MiniStat title="Логистика" value={dashboardStats.delivery} color="blue" icon={<Truck size={16} />} subValue={`${dashboardStats.deliveryCount} доставок | ${Math.round(dashboardStats.delivery / dashboardStats.deliveryCount || 0)} ₽/шт`} />
+              <MiniStat title="Штрафы/Прочее" value={dashboardStats.fines + dashboardStats.storage + dashboardStats.withholdings + dashboardStats.acceptance} color="rose" icon={<ShieldAlert size={16} />} />
+              <MiniStat title="Себестоимость" value={totalCostForView} color="slate" icon={<Archive size={16} />} subValue={`${dashboardStats.count} шт`} />
+
+              <div className="col-span-2 bg-indigo-600 p-6 rounded-[2rem] text-white flex flex-col justify-between shadow-xl shadow-indigo-100 relative overflow-hidden group">
+                <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform"><Coins size={120} /></div>
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">Чистая прибыль (Финал)</span>
+                  <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md"><Wallet size={16} /></div>
+                </div>
+                <div className="relative z-10">
+                  <span className="text-3xl font-black">{formatMoney(finalNet)}</span>
+                  <div className="mt-2 text-[10px] font-bold bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md">
+                    Маржинальность: {dashboardStats.toTransfer > 0 ? ((finalNet / dashboardStats.toTransfer) * 100).toFixed(1) : 0}%
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Tabs */}
+            <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100 w-fit">
+              <TabBtn active={activeTab === 'summary'} onClick={() => setActiveTab('summary')} label="Сводка по типам" />
+              <TabBtn active={activeTab === 'articles'} onClick={() => setActiveTab('articles')} label="Анализ товаров" />
+            </div>
+
+            {activeTab === 'summary' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(summaryData).map(([type, stats]) => (
+                  <div key={type} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-slate-50 rounded-xl text-slate-500"><Layers size={18} /></div>
+                      <h4 className="font-black text-sm uppercase tracking-tight">{type}</h4>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-[11px]"><span className="text-slate-400 font-bold uppercase">Реализация</span><span className="font-black">{formatMoney(stats.realized)}</span></div>
+                      <div className="flex justify-between items-center text-[11px]"><span className="text-slate-400 font-bold uppercase">К выплате</span><span className="font-black text-indigo-600">{formatMoney(stats.toTransfer)}</span></div>
+                      <div className="pt-2 border-t border-slate-50 flex justify-between items-center text-[10px]"><span className="text-slate-300 font-bold">Услуги WB</span><span className="font-bold text-rose-400">-{formatMoney(stats.delivery + stats.fines + stats.storage + stats.withholdings + stats.acceptance)}</span></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-sans">
+                    <thead className="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <tr>
+                        <th className="p-6 text-left">Артикул / Товар</th>
+                        <th className="p-6 text-center">Продажи</th>
+                        <th className="p-6 text-right">Выручка</th>
+                        <th className="p-6 text-right">К выплате</th>
+                        <th className="p-6 text-right">Прибыль Факт</th>
+                        <th className="p-6 text-right text-indigo-600 bg-indigo-50/30">Прибыль Товар</th>
+                        <th className="p-6 text-center">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {Object.entries(allArticleStats).map(([art, vals]) => {
+                        const wbCosts = vals.delivery + vals.fines + vals.storage + vals.withholdings + vals.acceptance;
+                        const profitFact = vals.toSeller - wbCosts - (costPrices[art] || 0) * vals.count;
+                        const avgLog = (vals.deliveryCount > 0 ? vals.delivery / vals.deliveryCount : 0);
+                        const profitItem = vals.toSeller - (avgLog * vals.count) - (vals.fines + vals.storage + vals.withholdings + vals.acceptance) - (costPrices[art] || 0) * vals.count;
+
+                        return (
+                          <tr key={art} className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="p-6">
+                              <div className="font-black text-slate-700">{art}</div>
+                              <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">
+                                {savedPrices[art] ? `LOCKED: ${formatMoney(savedPrices[art])}` : 'ЦЕНА НЕ ЗАДАНА'}
+                              </div>
+                            </td>
+                            <td className="p-6 text-center">
+                              <span className="px-3 py-1 bg-slate-100 rounded-lg font-black">{vals.count} шт</span>
+                              {vals.returnCount > 0 && <div className="text-[9px] text-rose-400 font-bold mt-1">Возвраты: {vals.returnCount}</div>}
+                            </td>
+                            <td className="p-6 text-right font-bold">{formatMoney(vals.revenue)}</td>
+                            <td className="p-6 text-right font-bold text-indigo-600">{formatMoney(vals.toSeller)}</td>
+                            <td className={`p-6 text-right font-black ${profitFact < 0 ? 'text-rose-500' : 'text-slate-600'}`}>
+                              {formatMoney(profitFact)}
+                            </td>
+                            <td className={`p-6 text-right font-black bg-indigo-50/20 ${profitItem < 0 ? 'text-rose-500' : 'text-emerald-600'}`}>
+                              {formatMoney(profitItem)}
+                            </td>
+                            <td className="p-6 text-center">
+                              <button
+                                onClick={() => openCalculatorModal(art, vals)}
+                                className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                title="Рассчитать цену"
+                              >
+                                <Calculator size={18} />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
       <style>{`
-        @keyframes bounce-in { 0% { transform: scale(0.98); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .animate-bounce-in { animation: bounce-in 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes bounce-in { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-bounce-in { animation: bounce-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        select { appearance: none; -webkit-appearance: none; }
       `}</style>
     </div>
   );
 };
 
 export default App;
+
