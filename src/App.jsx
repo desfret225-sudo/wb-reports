@@ -34,7 +34,8 @@ import {
   ChevronRight,
   PieChart,
   List,
-  Play
+  Play,
+  Search
 } from 'lucide-react';
 
 // --- Глобальные вспомогательные функции ---
@@ -176,6 +177,7 @@ const App = () => {
   const [calcData, setCalcData] = useState(null);
   const [activeSku, setActiveSku] = useState(null);
   const [historySku, setHistorySku] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -263,8 +265,23 @@ const App = () => {
     const end = endDate ? new Date(endDate) : null;
     if (start) start.setHours(0, 0, 0, 0);
     if (end) end.setHours(23, 59, 59, 999);
-    return baseData.filter(row => isRowInRange(row, start, end));
-  }, [files, visibleFiles, selectedFileId, startDate, endDate]);
+
+    let filtered = baseData.filter(row => isRowInRange(row, start, end));
+
+    // --- НОВОЕ: Универсальный поиск ---
+    if (searchTerm.trim()) {
+      const s = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(row => {
+        const art = String(getArt(row)).toLowerCase();
+        const srid = String(row['Srid'] || row['srid'] || '').toLowerCase();
+        const taskId = String(row['Номер сборочного задания'] || row['Сборочное задание'] || row['ШК'] || '').toLowerCase();
+        const sticker = String(row['Стикер МП'] || row['Стикер'] || '').toLowerCase();
+        return art.includes(s) || srid.includes(s) || taskId.includes(s) || sticker.includes(s);
+      });
+    }
+
+    return filtered;
+  }, [files, visibleFiles, selectedFileId, startDate, endDate, searchTerm]);
 
   const dashboardStats = useMemo(() => {
     let data = currentDataFiltered;
@@ -566,6 +583,19 @@ const App = () => {
                 <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-indigo-400" />
                 <button onClick={resetPeriod} className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"><RefreshCcw size={16} /></button>
               </div>
+            </div>
+
+            {/* Глобальный поиск */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+              <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600"><Search size={20} /></div>
+              <input
+                type="text"
+                placeholder="Поиск по Артикулу, Srid, Сборочному заданию или Стикеру..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-grow bg-transparent outline-none text-sm font-bold placeholder:text-slate-300"
+              />
+              {searchTerm && <button onClick={() => setSearchTerm('')} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"><X size={16} /></button>}
             </div>
 
             {/* Переключатель отчетов */}
