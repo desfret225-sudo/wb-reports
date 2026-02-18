@@ -1,7 +1,7 @@
 @echo off
-title GitHub Uploader
+title GitHub Uploader & Deployer
 echo ========================================
-echo   Uploading project to GitHub...
+echo   Uploading and Deploying project...
 echo ========================================
 
 cd /d "%~dp0"
