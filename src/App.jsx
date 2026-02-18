@@ -232,14 +232,26 @@ const App = () => {
     currentDataFiltered.forEach(row => {
       const art = getArt(row);
       if (!art) return;
-      if (!articles[art]) articles[art] = { count: 0, revenue: 0, toSeller: 0, delivery: 0, deliveryCount: 0, fines: 0, storage: 0, withholdings: 0, acceptance: 0, returnCount: 0, kvvSum: 0, kvvCount: 0, acqSum: 0, acqCount: 0 };
+      if (!articles[art]) articles[art] = { count: 0, revenue: 0, toSeller: 0, delivery: 0, deliveryCount: 0, fines: 0, storage: 0, withholdings: 0, acceptance: 0, returnCount: 0, kvvSum: 0, kvvCount: 0, acqSum: 0, acqCount: 0, grossSalesSum: 0, grossSalesCount: 0 };
       const type = row['Обоснование для оплаты'];
       const count = parseInt(row['Кол-во']) || 0;
       let realized = parseWBNum(row['Вайлдберриз реализовал Товар (Пр)']);
       let toTransfer = parseWBNum(row['К перечислению Продавцу за реализованный Товар']);
-      if (type === 'Возврат') { realized = -Math.abs(realized); toTransfer = -Math.abs(toTransfer); articles[art].returnCount += count; }
-      if (type === 'Продажа') { articles[art].count += count; }
-      else if (type === 'Возврат') { articles[art].count -= count; }
+      const salePrice = parseWBNum(row['Цена розничная с учетом согласованной скидки']);
+
+      if (type === 'Продажа') {
+        articles[art].count += count;
+        if (salePrice > 0) {
+          articles[art].grossSalesSum += salePrice * count;
+          articles[art].grossSalesCount += count;
+        }
+      }
+      else if (type === 'Возврат') {
+        realized = -Math.abs(realized);
+        toTransfer = -Math.abs(toTransfer);
+        articles[art].returnCount += count;
+        articles[art].count -= count;
+      }
       articles[art].revenue += realized;
       articles[art].toSeller += toTransfer;
       const delivery = parseWBNum(row['Услуги по доставке товара покупателю']);
@@ -709,6 +721,7 @@ const App = () => {
                       <tr>
                         <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Артикул</th>
                         <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Шт.</th>
+                        <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Ср. цена Пр.</th>
                         <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">На счет</th>
                         <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right text-rose-400">Расходы</th>
                         <th className="p-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right text-indigo-500 font-black">Цена сайта</th>
@@ -736,6 +749,9 @@ const App = () => {
                               {vals.returnCount > 0 && <span className="text-[9px] text-rose-400 font-bold uppercase tracking-tighter leading-none font-sans">Возвратов: {vals.returnCount}</span>}
                             </td>
                             <td className="p-5 text-center font-black text-indigo-600 tracking-tighter text-base leading-none font-sans">{vals.count}</td>
+                            <td className="p-5 text-right font-bold text-slate-600 leading-none font-sans">
+                              {vals.grossSalesCount > 0 ? formatMoney(vals.grossSalesSum / vals.grossSalesCount) : '---'}
+                            </td>
                             <td className={`p-5 text-right font-bold leading-none font-sans ${vals.toSeller < 0 ? 'text-rose-500' : 'text-slate-800'}`}>{formatMoney(vals.toSeller)}</td>
                             <td className="p-5 text-right text-rose-400 text-xs leading-none font-bold font-sans">-{formatMoney(wbCosts)}</td>
                             <td className="p-5 text-right" onClick={(e) => e.stopPropagation()}>
