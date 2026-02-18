@@ -340,17 +340,22 @@ const App = () => {
       </div>
       <div className="bg-white/10 backdrop-blur-2xl border border-white/10 w-full max-w-md rounded-[2.5rem] p-8 text-center shadow-2xl relative animate-bounce-in">
         <div className="w-16 h-16 bg-indigo-600 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-xl rotate-12"><Lock className="text-white" size={32} /></div>
-        <h2 className="text-white text-xl font-black mb-3">Доступ ограничен</h2>
-        <p className="text-slate-300 text-xs mb-6">Подпишитесь на наш Telegram канал для доступа к программе.</p>
-        <div className="bg-white/5 rounded-xl p-4 mb-6 text-left">
-          <div className="flex gap-2 mb-3"><ShieldAlert className="text-rose-400" size={14} /><p className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Отписка = бан на 24 часа. Повторно = бан на неделю.</p></div>
-          <a href="https://t.me/AI_Business_Online" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-indigo-600 p-3 rounded-lg text-white group">
-            <span className="font-black text-xs">@AI_Business_Online</span><ExternalLink size={14} />
+        <h2 className="text-white text-2xl font-black mb-3 italic">Добро пожаловать!</h2>
+        <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+          Мы рады видеть вас в нашей команде! Ваша подписка на канал очень поможет нашему развитию.
+          Как говорится, <strong>часть команды — часть корабля!</strong>
+          Давайте вместе внедрять ИИ и смелые задумки в ваш бизнес!
+        </p>
+        <div className="bg-white/5 rounded-xl p-5 mb-6 text-left border border-white/10">
+          <div className="flex gap-3 mb-4"><TrendingUp className="text-emerald-400 shrink-0" size={18} /><p className="text-[11px] text-slate-100 font-bold uppercase tracking-wider leading-tight">Присоединяйтесь к сообществу предпринимателей нового поколения</p></div>
+          <a href="https://t.me/AI_Business_Online" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between bg-indigo-600 p-4 rounded-xl text-white group hover:bg-indigo-500 transition-all shadow-lg">
+            <span className="font-black text-sm">@AI_Business_Online</span><ExternalLink size={16} className="group-hover:translate-x-1 transition-transform" />
           </a>
         </div>
-        <button onClick={handleCheckSub} disabled={isChecking} className="w-full py-4 bg-white text-slate-900 rounded-xl font-black text-sm hover:bg-slate-100 flex items-center justify-center gap-2">
-          {isChecking ? <><Loader2 className="animate-spin text-indigo-600" size={18} />Проверка...</> : 'Я подписался, войти'}
+        <button onClick={handleCheckSub} disabled={isChecking} className="w-full py-5 bg-white text-slate-900 rounded-xl font-black text-sm hover:bg-slate-100 transition-all flex items-center justify-center gap-3 shadow-xl">
+          {isChecking ? <><Loader2 className="animate-spin text-indigo-600" size={20} />Проверка команды...</> : 'Взойти на борт'}
         </button>
+        <p className="mt-6 text-[10px] text-slate-500 font-bold uppercase tracking-widest">AI & Business Integration System</p>
       </div>
     </div>
   );
